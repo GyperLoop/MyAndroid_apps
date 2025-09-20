@@ -1,0 +1,20 @@
+#:kivy 2.1.0
+BoxLayout:
+    orientation: "vertical"
+    padding: 10
+    spacing: 10
+
+    Button:
+        text: "Select File"
+        size_hint_y: None
+        height: "48dp"
+        on_release: app.open_file_chooser()
+
+    ScrollView:
+        Label:
+            id: output
+            text: "File contect will appear here"
+            text_size: self.width, None
+            size_hint_y: None
+            height: self.texture_size[1]
+            padding: 10,10
