@@ -55,7 +55,7 @@ def read_document(path: str) -> str:
     
 class DocumentReaderApp(App):
     def build(self):
-        return self.root
+        return Builder.load_file("document_reader.kv")
     
     def open_file_chooser(self):
         layout = BoxLayout(orientation='vertical', spacing=5)
