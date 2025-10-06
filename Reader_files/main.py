@@ -57,21 +57,35 @@ class DocumentReaderApp(App):
         return Builder.load_file("document_reader.kv")
     
     def open_file_chooser(self):
-        layout = BoxLayout(orientation='vertical', spacing=5)
+        layout = BoxLayout(orientation='vertical', spacing=5, padding=5)
         search_bar = TextInput(
             hint_text="Search by file name...",
             size_hint_y=None,
             height='40dp'
         )
         chooser = FileChooserListView(filters=['*.pdf', '*.docx', '*.txt', '*.xlsx'])
-        chooser.path = "/storage/emulated/0/Documents"  # Optional default path
-        btn = Button(text='Open Selected', size_hint_y=None, height='48dp')
+        # chooser.path = "/storage/emulated/0/Documents"  # Optional default path
+        btn = Button(
+            text='Open Selected',
+            size_hint_y=None,
+            height='48dp'
+        )
 
         def update_search(instance, value):
-            """Filter files dynamically by filename."""
-            text = value.lower()
-            chooser.filters = [lambda folder, filename: text in filename.lower()]
-            chooser._update_files()  # force refresh
+            text = value.lower().strip()
+            if text:
+                chooser.filters = [
+                    lambda folder, filename: text in filename.lower() and (
+                        filename.endswith('.pdf') or
+                        filename.endswith('.docx') or
+                        filename.endswith('.txt') or
+                        filename.endswith('.xlsx')
+                    )
+                ]
+            else:
+                # Reset to show all supported file types
+                chooser.filters = ['*.pdf', '*.docx', '*.txt', '*.xlsx']
+            chooser._update_files()  # refresh file list
 
         search_bar.bind(text=update_search)
     
@@ -86,13 +100,17 @@ class DocumentReaderApp(App):
                 popup.dismiss()
 
         btn.bind(on_release=open_selected)
+        layout.add_widget(search_bar)
         layout.add_widget(chooser)
         layout.add_widget(btn)
-        popup = Popup(title="Select a Document",
-                      content=layout,
-                      size_hint=(0.9, 0.9))
-        popup.open()
+
+        popup = Popup(
+            title="Select a Document",
+            content=layout,
+            size_hint=(0.9, 0.9)
+        )
+        popup.open()     
     
 if __name__ == '__main__':
-
+    DocumentReaderApp().run()
     DocumentReaderApp().run()
