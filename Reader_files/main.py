@@ -9,6 +9,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.lang import Builder
+from kivy.uix.textinput import TextInput
 
 Builder.load_file("document_reader.kv")
 
@@ -41,17 +42,15 @@ def read_xlsx(path: str) -> str:
     return "\n".join(output)
 
 def read_document(path: str) -> str:
+    if not os.path.exists(path):
+        raise FileNotFoundError("File not found.")
+    if os.path.getsize(path) > 50 * 1024 * 1024:
+        raise ValueError("File too large.")
     ext = os.path.splitext(path)[1].lower()
-    if ext == '.pdf':
-        return read_pdf(path)
-    elif ext == '.docx':
-        return read_docx(path)
-    elif ext == '.txt':
-        return read_txt(path)
-    elif ext == '.xlsx':
-        return read_xlsx(path)
-    else:
-        raise ValueError(f"Unsupported file type: {ext}")
+    safe_exts = {'.pdf': read_pdf, '.docx': read_docx, '.txt': read_txt, '.xlsx': read_xlsx}
+    if ext not in safe_exts:
+        raise ValueError(f"Unsupported or unsafe file type: {ext}")
+    return safe_exts[ext](path)
     
 class DocumentReaderApp(App):
     def build(self):
@@ -59,9 +58,23 @@ class DocumentReaderApp(App):
     
     def open_file_chooser(self):
         layout = BoxLayout(orientation='vertical', spacing=5)
+        search_bar = TextInput(
+            hint_text="Search by file name...",
+            size_hint_y=None,
+            height='40dp'
+        )
         chooser = FileChooserListView(filters=['*.pdf', '*.docx', '*.txt', '*.xlsx'])
+        chooser.path = "/storage/emulated/0/Documents"  # Optional default path
         btn = Button(text='Open Selected', size_hint_y=None, height='48dp')
 
+        def update_search(instance, value):
+            """Filter files dynamically by filename."""
+            text = value.lower()
+            chooser.filters = [lambda folder, filename: text in filename.lower()]
+            chooser._update_files()  # force refresh
+
+        search_bar.bind(text=update_search)
+    
         def open_selected(instance):
             if chooser.selection:
                 file_path = chooser.selection[0]
@@ -72,7 +85,7 @@ class DocumentReaderApp(App):
                     self.root.ids.output.text = f"Error: {e}"
                 popup.dismiss()
 
-        btn.bind(on_relese=open_selected)
+        btn.bind(on_release=open_selected)
         layout.add_widget(chooser)
         layout.add_widget(btn)
         popup = Popup(title="Select a Document",
@@ -81,4 +94,5 @@ class DocumentReaderApp(App):
         popup.open()
     
 if __name__ == '__main__':
+
     DocumentReaderApp().run()
